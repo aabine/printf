@@ -1,4 +1,9 @@
 #include "main.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <unistd.h>
+#include <math.h>
 
 /**
  * handle_integer - prints a sequence of integers
@@ -7,64 +12,32 @@
  */
 int handle_integer(va_list args)
 {
-    int numbers, sum, count = 0, i, powof, length;
+    int numbers, sum, count = 0, i, length, buf_size, digits;
+    char *buf;
+
     numbers = va_arg(args, int);
 
     if (numbers <= 0)
         return (0); /* nothing to print */
 
-    for (i = 1; i <= numbers; i++)
+    buf_size = log10(numbers * (numbers + 1) / 2) + numbers + 1;
+    buf = malloc(buf_size);
+
+    sum = 1;
+    sprintf(buf, "%d", sum);
+    length = log10(sum) + 1;
+    count += length;
+    for (i = 2; i <= numbers; i++)
     {
-        powof = 1;
-        sum = 0;
-        while (powof <= i)
-        {
-            sum += powof;
-            powof *= 2;
-        }
-        length = count_digits(sum);
+        sum += i;
+        sprintf(buf + count, " %d", sum);
+        length = log10(sum) + 1;
         count += length + 1; /* increment count for each number and space */
-
-        if (i > 1) /* add space before all but the first number */
-            write(1, " ", 1);
-
-        print_number(sum, length);
     }
+    write(1, buf, count);
     write(1, "\n", 1);
     count++; /* increment count for newline */
+
+    free(buf);
     return (count);
-}
-
-/**
- * count_digits - counts the number of digits in an integer
- * @n: integer to count digits of
- * Return: number of digits
- */
-int count_digits(int n)
-{
-    int digits = 0;
-    while (n > 0)
-    {
-        digits++;
-        n /= 10;
-    }
-    return (digits);
-}
-
-/**
- * print_number - prints an integer with leading zeros
- * @n: integer to print
- * @length: total length of the output
- */
-void print_number(int n, int length)
-{
-    char buf[10]; /* temporary buffer for converting digits to characters */
-    int i;
-
-    for (i = length - 1; i >= 0; i--)
-    {
-        buf[i] = n % 10 + '0';
-        n /= 10;
-    }
-    write(1, buf, length);
 }

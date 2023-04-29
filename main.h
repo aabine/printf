@@ -13,13 +13,19 @@
 // Define a struct for format specifiers
 typedef struct specifier
 {
-    const char *name;
-    int (*handler)(va_list);
+	const char *name;
+	int (*handler)(va_list);
 } f_spec;
 
 
 
 int _printf(const char *format, ...);
+
+int precision(va_list args, f_spec spec[], int *count, int *i);
+int width(va_list args, f_spec spec[], int *count, int *i);
+int flags(va_list args, f_spec spec[], int *count, int *i);
+int conversion(va_list args, f_spec spec[], int *count, int *i);
+
 
 
 // Declare the handler functions for the format specifiers
@@ -30,7 +36,6 @@ int handle_decimal(va_list args);
 int handle_char(va_list args);
 int handle_string(va_list args);
 int handle_hex(va_list args);
-int handle_float(va_list args);
 int handle_octal(va_list args);
 int handle_binary(va_list args);
 int handle_unsigned(va_list args);

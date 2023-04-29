@@ -6,11 +6,11 @@
  * @args: argument list
  * Return: number of characters printed
  */
-int print_unsigned(va_list args)
+int handle_unsigned(va_list args)
 {
     unsigned int n = va_arg(args, unsigned int);
     unsigned int len = 1, powof = 1, digits;
-    char buf[10]; /* temporary buffer for converting digits to characters */
+    char buf[BUFF_SIZE]; /* temporary buffer for converting digits to characters */
     int buflen; /* length of the temporary buffer */
 
     if (n < 0)

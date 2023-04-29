@@ -1,38 +1,35 @@
 #include "main.h"
 
-//**
+/**
  * print_rot13 - prints a rot13-encoded string
  * @args: argument list containing a char *
  *
  * Return: number of characters printed
  */
-int print_rot13(va_list args)
+int handle_rot13(va_list args)
 {
-    const char *alph = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-    const char *rot13 = "NOPQRSTUVWXYZABCDEFGHIJKLMnopqrstuvwxyzabcdefghijklm";
-    int i, count = 0;
     const char *s = va_arg(args, const char *);
-    char hash[128] = {0};
-    char out[sizeof(hash)] = {0};
-    int out_pos = 0;
+    int count = 0;
 
     if (s == NULL)
         s = "(null)";
 
-    for (i = 0; i < 52; i++)
-        hash[(unsigned char) alph[i]] = rot13[i];
-
-    for (i = 0; s[i]; i++)
+    for (; *s; s++)
     {
-        char c = hash[(unsigned char) s[i]];
-        out[out_pos++] = c ? c : s[i];
-    }
+        char c = *s;
 
-    count = write(STDOUT_FILENO, out, out_pos);
-    if (count < 0)
-    {
-        perror("write");
-        exit(EXIT_FAILURE);
+        if (c >= 'A' && c <= 'Z')
+            c = ((c - 'A') + 13) % 26 + 'A';
+        else if (c >= 'a' && c <= 'z')
+            c = ((c - 'a') + 13) % 26 + 'a';
+
+        count += write(STDOUT_FILENO, &c, 1);
+
+        if (count < 0)
+        {
+            perror("write");
+            exit(EXIT_FAILURE);
+        }
     }
 
     return count;

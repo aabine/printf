@@ -1,59 +1,36 @@
 #include "main.h"
 
-#define BUFFER_SIZE 1024
+int handle_char(va_list args) {
+    char c = va_arg(args, int);
+    if (c == '\0') {
+        return -1; // Null character not allowed
+    }
 
-/**
- * struct s_buffer - Buffer struct
- * @buff: Pointer to buffer
- * @pos: Current position in buffer
- */
-typedef struct s_buffer
-{
-    char buff[BUFFER_SIZE];
-    size_t pos;
-} t_buffer;
+    static char buffer[BUFF_SIZE];
+    static int buffer_pos = 0;
 
-/**
- * flush_buffer - Writes contents of buffer to output
- * @buffer: Pointer to buffer
- */
-void flush_buffer(t_buffer *buffer)
-{
-    write(1, buffer->buff, buffer->pos);
-    buffer->pos = 0;
+    buffer[buffer_pos++] = c;
+
+    if (buffer_pos >= sizeof(buffer)) {
+        if (write(STDOUT_FILENO, buffer, sizeof(buffer)) != sizeof(buffer)) {
+            return -1; // Error writing to standard output
+        }
+        buffer_pos = 0;
+    }
+
+    return 0;
 }
 
-/**
- * handle_char - Handles a character argument
- * @args: Argument list
- * @buffer: Pointer to buffer
- *
- * Return: 1
- */
-int handle_char(va_list args, t_buffer *buffer)
-{
-    char c;
+int flush_buffer() {
+    static char buffer[BUFF_SIZE];
+    static int buffer_pos = 0;
 
-    c = va_arg(args, int);
-    if (buffer->pos >= BUFFER_SIZE)
-        flush_buffer(buffer);
-    buffer->buff[buffer->pos++] = c;
-    return (1);
-}
+    if (buffer_pos > 0) {
+        if (write(STDOUT_FILENO, buffer, buffer_pos) != buffer_pos) {
+            return -1; // Error writing to standard output
+        }
+        buffer_pos = 0;
+    }
 
-/**
- * print_percent - Handles a percent character
- * @buffer: Pointer to buffer
- *
- * Return: 1
- */
-int print_percent(t_buffer *buffer)
-{
-    char c;
-
-    c = '%';
-    if (buffer->pos >= BUFFER_SIZE)
-        flush_buffer(buffer);
-    buffer->buff[buffer->pos++] = c;
-    return (1);
+    return 0;
 }

@@ -7,92 +7,104 @@
  */
 int _printf(const char *format, ...)
 {
-    va_list args;
-    int (*handler)(va_list);
-    unsigned int count = 0, length = 0;
-    char buffer[1024];
-    int buffer_pos = 0;
+	va_list args;
+	int (*get_handler)(va_list);
+	unsigned int format_pos = 0;
+	char buffer[BUFF_SIZE * 10] = {0};
+	int buffer_pos = 0; /* position in buffer */
 
-    if (!format)
-    {
-        return (-1);
-    }
+	if (!format)
+	{
+		return (-1);
+	}
 
-    va_start(args, format);
+	va_start(args, format);
 
-    while (format[count])
-    {
-        while (format[count] != '%' && format[count] != '\0')
-        {
-            buffer[buffer_pos++] = format[count++];
-            length++;
-        }
+	while (format[format_pos])
+	{
+		while (format[format_pos] != '%' && format[format_pos] != '\0')
+		{
+			buffer[buffer_pos++] = format[format_pos++];
+			if (buffer_pos >= sizeof(buffer))
+			{
+				buffer_pos = 0;
+			}
+		}
 
-        if (format[count] == '\0')
-            break;
+		if (format[format_pos] == '\0')
+			break;
 
-        handler = find_specifier(&format[count + 1]);
-        if (handler)
-        {
-            buffer_pos += vsnprintf(&buffer[buffer_pos], sizeof(buffer) - buffer_pos, &format[count], args);
-            length += buffer_pos - (buffer_pos - sizeof(buffer));
-            count += 2;
-            continue;
-        }
+		switch (format[format_pos + 1])
+		{
+			case 'd':
+			case 'i':
+				get_handler = handle_integer;
+				break;
+			case 'c':
+				get_handler = handle_char;
+				break;
+			case 's':
+				get_handler = handle_string;
+				break;
+			case 'x':
+			case 'X':
+				get_handler = handle_hex;
+				break;
+			case 'o':
+				get_handler = handle_octal;
+				break;
+			case 'b':
+				get_handler = handle_binary;
+				break;
+			case 'u':
+				get_handler = handle_unsigned;
+				break;
+			case 'p':
+				get_handler = handle_pointer;
+				break;
+			case 'r':
+				get_handler = handle_reverse;
+				break;
+			case 'R':
+				get_handler = handle_rot13;
+				break;
+			default:
+				if (format[format_pos])
+					get_handler = handle_non_printable;
+				else
+					break;
 
-        if (format[count + 1] == '\0')
-            return (-1);
+				buffer[buffer_pos++] = format[format_pos];
+				buffer[buffer_pos++] = format[format_pos + 1];
+				if (buffer_pos >= sizeof(buffer))
+				{
+					buffer_pos = 0;
+				}
+				format_pos += 2;
+				continue;
+		}
 
-        buffer[buffer_pos++] = format[count + 1];
-        length++;
+		buffer_pos += vsnprintf(&buffer[buffer_pos], sizeof(buffer) - buffer_pos, &format[format_pos], args);
+		format_pos += 2;
 
-        if (format[count + 1] == '%')
-            count += 2;
-        else
-            count++;
-    }
-    va_end(args);
+		if (get_handler)
+			buffer_pos += get_handler(args);
 
-    fwrite(buffer, buffer_pos, 1, stdout);
+		if (buffer_pos >= sizeof(buffer))
+		{
+			buffer_pos = 0;
+		}
 
-    return (length);
-}
+		write(1, buffer, buffer_pos);
 
-/**
- * find_specifier - finds a specifier
- * @args: argument list
- * Return: handler
- */
+		buffer[buffer_pos] = '\0';
+	}
 
-int (*find_specifier(const char *args))(va_list)
-{
+	
+	va_end(args);
 
-    unsigned int count = 0;
+	if (buffer_pos > 0)
+		fwrite(buffer, buffer_pos, 1, stdout);
 
-    f_spec formats[] = {
-        {"C", handle_non_printable},
-        {"%d", handle_integer},
-        {"%i", handle_decimal},
-        {"%f", handle_float},
-        {"%c", handle_char},
-        {"%s", handle_string},
-        {"%x", handle_hex},
-        {"%X", handle_hex},
-        {"%o", handle_octal},
-        {"%b", handle_binary},
-        {"%u", handle_unsigned},
-        {"%p", handle_pointer},
-        {"%r", handle_reverse},
-        {"%R", handle_rot13},
-        {NULL, 0}};
-
-    while (formats[count].name)
-    {
-        if (formats[count].name == (char *)args[0])
-        {
-            return formats[count].handler;
-        }
-        count++;
-    }
-    return NULL;
+	return (format_pos);
 }
